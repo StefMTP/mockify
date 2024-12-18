@@ -1,6 +1,6 @@
-import inquirer, { DistinctQuestion } from "inquirer";
-import config from "./utils/config";
-import logger from "./utils/logger";
+import inquirer from "inquirer";
+import config from "./utils/config.js";
+import logger from "./utils/logger.js";
 
 // Define the type for answers explicitly
 interface ShopifyCredentials {
@@ -8,25 +8,33 @@ interface ShopifyCredentials {
   accessToken: string;
 }
 
-export async function promptShopifyCredentials() {
+export async function promptShopifyCredentials(args: { shop?: string; accessToken?: string }) {
   try {
-    // Explicitly type the answers using ShopifyCredentials
+    // If arguments are passed, use them; otherwise, prompt the user
     const answers = await inquirer.prompt<ShopifyCredentials>([
       {
-        type: "input", // Required by Inquirer
-        name: "shop", // Key for the response object
+        type: "input",
+        name: "shop",
         message: "Enter your Shopify store name:",
+        default: args.shop || config.shop || undefined,
+        when: !args.shop, // Skip prompt if shop is provided as an argument
       },
       {
         type: "input",
         name: "accessToken",
         message: "Enter your Shopify access token:",
+        default: args.accessToken || config.accessToken || undefined,
+        when: !args.accessToken, // Skip prompt if accessToken is provided as an argument
       },
     ]);
 
-    // Update environment variables using the config utility
-    config.updateEnv("SHOP", answers.shop);
-    config.updateEnv("ACCESS_TOKEN", answers.accessToken);
+    // Merge arguments and prompted answers
+    const shop = args.shop || answers.shop;
+    const accessToken = args.accessToken || answers.accessToken;
+
+    // Update the .env file dynamically with the provided values
+    if (shop) config.updateEnv("SHOP", shop);
+    if (accessToken) config.updateEnv("ACCESS_TOKEN", accessToken);
 
     logger.info("✅ Shopify credentials saved successfully!");
   } catch (error) {

@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
-import logger from "./logger";
+import logger from "./logger.js";
 
 dotenv.config(); // Load .env variables on startup
 
@@ -13,7 +13,8 @@ class Config {
 
   constructor() {
     this.envPath = path.resolve(process.cwd(), ".env");
-    this.validateEnv();
+    this.checkEnvFile(); // Ensure .env exists
+    this.warnMissingEnvVars(); // Warn about missing variables
   }
 
   // Expose environment variables
@@ -25,12 +26,19 @@ class Config {
     return process.env.ACCESS_TOKEN || "";
   }
 
-  // Validate required environment variables
-  private validateEnv() {
+  // Ensure .env file exists
+  private checkEnvFile() {
+    if (!fs.existsSync(this.envPath)) {
+      logger.warn("⚠️  .env file not found. Creating an empty .env file...");
+      fs.writeFileSync(this.envPath, ""); // Create an empty .env file
+    }
+  }
+
+  // Warn about missing required environment variables
+  private warnMissingEnvVars() {
     const missingVars = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
     if (missingVars.length > 0) {
-      logger.error(`❌ Missing required environment variables: ${missingVars.join(", ")}`);
-      process.exit(1);
+      logger.warn(`⚠️  Missing required environment variables: ${missingVars.join(", ")}`);
     }
   }
 

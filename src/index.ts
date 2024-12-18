@@ -1,7 +1,9 @@
+#!/usr/bin/env node
+
 import { Command } from "commander";
 import { promptShopifyCredentials } from "./prompts.js";
-import generateProducts from "./commands/generateProducts.js";
 import generateOrders from "./commands/generateOrders.js";
+import generateProducts from "./commands/generateProducts.js";
 
 const program = new Command();
 
@@ -14,7 +16,11 @@ program
 program
   .command("setup")
   .description("Set up Shopify credentials (store name and access token)")
-  .action(promptShopifyCredentials);
+  .option("--shop <shop>", "Shopify store name")
+  .option("--accessToken <accessToken>", "Shopify access token")
+  .action((options) => {
+    promptShopifyCredentials(options);
+  });
 
 // Command to generate dummy products
 program
