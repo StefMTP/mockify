@@ -23,16 +23,6 @@ export default [
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/no-explicit-any": "warn",
 
-      // Import rules
-      "import/order": [
-        "warn",
-        {
-          groups: ["builtin", "external", "parent", "sibling", "index"],
-          "newlines-between": "always",
-          alphabetize: { order: "asc", caseInsensitive: true },
-        },
-      ],
-
       // General rules
       "no-console": "off", // Allow console logs (for CLI apps)
       semi: ["error", "always"], // Enforce semicolons
