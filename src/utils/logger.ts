@@ -2,14 +2,19 @@ import { createLogger, format, transports } from "winston";
 
 const { combine, timestamp, printf, colorize } = format;
 
+// Define a type for table rows (key-value pairs)
+type TableRow = Record<string, string | number | boolean | null | undefined>;
+
 // Function to calculate column widths based on data
-function calculateColumnWidths(data: any[]) {
+function calculateColumnWidths(data: TableRow[]): number[] {
   const columns = Object.keys(data[0]);
-  return columns.map((col) => Math.max(col.length, ...data.map((row) => String(row[col]).length)));
+  return columns.map((col) =>
+    Math.max(col.length, ...data.map((row) => String(row[col] ?? "").length))
+  );
 }
 
 // Function to format data as a table
-function formatTable(data: any[]) {
+function formatTable(data: TableRow[]): string {
   const columns = Object.keys(data[0]);
   const columnWidths = calculateColumnWidths(data);
   const separator = " | ";
@@ -23,7 +28,7 @@ function formatTable(data: any[]) {
   // Data rows
   data.forEach((row) => {
     const rowString = columns
-      .map((col, i) => String(row[col]).padEnd(columnWidths[i]))
+      .map((col, i) => String(row[col] ?? "").padEnd(columnWidths[i]))
       .join(separator);
     table += `| ${rowString} |\n`;
   });
@@ -36,7 +41,7 @@ function formatTable(data: any[]) {
 const customFormat = printf(({ level, message, timestamp }) => {
   if (Array.isArray(message) && typeof message[0] === "object") {
     // Format as a table if message is an array of objects
-    const table = formatTable(message);
+    const table = formatTable(message as TableRow[]);
     return `${timestamp} [${level}]:\n${table}`;
   }
   if (typeof message === "object") {
