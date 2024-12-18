@@ -1,7 +1,7 @@
-import ShopifyClient from "../utils/shopify";
-import { generateOrderData } from "../utils/faker";
-import logger from "../utils/logger";
-import config from "../utils/config";
+import ShopifyClient from "../utils/shopify.js";
+import { generateOrderData } from "../utils/faker.js";
+import logger from "../utils/logger.js";
+import config from "../utils/config.js";
 
 export default async function generateOrders(count: number) {
   const shopify = new ShopifyClient();
@@ -12,20 +12,12 @@ export default async function generateOrders(count: number) {
   for (let i = 0; i < count; i++) {
     try {
       const orderData = generateOrderData();
-      const response = await shopify.createOrderMutation(orderData, {
+      const order = await shopify.createOrderMutation(orderData, {
         inventoryBehaviour: "BYPASS",
         sendReceipt: false,
       });
-
-      if (response?.orderCreate?.userErrors?.length) {
-        logger.error(
-          `❌ Failed to create order: ${JSON.stringify(response?.orderCreate?.userErrors, null, 2)}`
-        );
-      } else {
-        const createdOrder = response.orderCreate.order;
-        orders.push({ Order: createdOrder.name, ID: createdOrder.id });
-        logger.info(`✅ Created order: ${createdOrder.name}`);
-      }
+      orders.push({ Order: order.name, ID: order.id });
+      logger.info(`✅ Created order: ${order.name}`);
     } catch (err) {
       logger.error(`❌ Error creating order: ${err}`);
     }

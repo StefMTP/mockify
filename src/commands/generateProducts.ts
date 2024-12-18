@@ -1,10 +1,10 @@
-import ShopifyClient from "../utils/shopify";
-import { generateProductData } from "../utils/faker";
-import logger from "../utils/logger";
-import config from "../utils/config";
+import ShopifyClient from "../utils/shopify.js";
+import { generateProductData } from "../utils/faker.js";
+import logger from "../utils/logger.js";
+import config from "../utils/config.js";
 
 export default async function generateProducts(count: number) {
-  const client = new ShopifyClient();
+  const shopify = new ShopifyClient();
   const products = [];
 
   logger.info(`🚀 Generating ${count} products for shop: ${config.shop}...`);
@@ -12,9 +12,11 @@ export default async function generateProducts(count: number) {
   for (let i = 0; i < count; i++) {
     try {
       const productData = generateProductData();
-
-      //TODO: call the shopify client with the proper graphql mutations to create products, options and variants
-      //TODO: check for errors and push logs in final data table
-    } catch (err) {}
+      const product = await shopify.productSetMutation(productData, true);
+      products.push({ Product: product.title, ID: product.id });
+      logger.info(`✅ Created product: ${product.title}`);
+    } catch (err) {
+      logger.error(`❌ Error creating product: ${err}`);
+    }
   }
 }
