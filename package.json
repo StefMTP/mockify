@@ -1,11 +1,11 @@
 {
-  "name": "shopify-data-cli",
+  "name": "mockify",
   "version": "1.0.0",
   "type": "module",
-  "description": "CLI tool for generating dummy Shopify data using TypeScript, Faker.js, and Shopify Admin API.",
+  "description": "CLI tool for generating mock Shopify data using TypeScript, Faker.js, and Shopify Admin API.",
   "main": "dist/index.js",
   "bin": {
-    "shop": "./dist/index.js"
+    "mockify": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
