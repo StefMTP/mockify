@@ -39,6 +39,7 @@ class Config {
     const missingVars = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
     if (missingVars.length > 0) {
       logger.warn(`⚠️  Missing required environment variables: ${missingVars.join(", ")}`);
+      logger.warn("⚠️  Please run mockify setup.");
     }
   }
 
