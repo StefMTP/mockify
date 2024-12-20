@@ -1,6 +1,6 @@
 import inquirer from "inquirer";
-import config from "./utils/config.js";
-import logger from "./utils/logger.js";
+import config from "../utils/config.js";
+import logger from "../utils/logger.js";
 
 // Define the type for answers explicitly
 interface ShopifyCredentials {
@@ -8,7 +8,7 @@ interface ShopifyCredentials {
   accessToken: string;
 }
 
-export async function promptShopifyCredentials(args: { shop?: string; accessToken?: string }) {
+export async function setup(args: { shop?: string; accessToken?: string }) {
   try {
     // If arguments are passed, use them; otherwise, prompt the user
     const answers = await inquirer.prompt<ShopifyCredentials>([
