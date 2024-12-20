@@ -37,24 +37,31 @@ function formatTable(data: TableRow[]): string {
   return table;
 }
 
-// Custom log format
-const customFormat = printf(({ level, message, timestamp }) => {
-  if (Array.isArray(message) && typeof message[0] === "object") {
-    // Format as a table if message is an array of objects
-    const table = formatTable(message as TableRow[]);
+// Custom format to handle different types of messages
+const customFormat = printf(({ level, rawMessage, timestamp }) => {
+  if (Array.isArray(rawMessage) && typeof rawMessage[0] === "object") {
+    // Format as a table if rawMessage is an array of objects
+    const table = formatTable(rawMessage as TableRow[]);
     return `${timestamp} [${level}]:\n${table}`;
   }
-  if (typeof message === "object") {
+  if (typeof rawMessage === "object") {
     // Format JSON objects
-    return `${timestamp} [${level}]: ${JSON.stringify(message, null, 2)}`;
+    return `${timestamp} [${level}]: ${JSON.stringify(rawMessage, null, 2)}`;
   }
   // Plain string messages
-  return `${timestamp} [${level}]: ${message}`;
+  return `${timestamp} [${level}]: ${rawMessage}`;
+});
+
+// Transform the message to preserve its original type
+const preserveOriginalMessage = format((info) => {
+  info.rawMessage = info.message; // Save the original message in `rawMessage`
+  return info; // Pass the info object to the next format
 });
 
 // Winston logger configuration
 const logger = createLogger({
   format: combine(
+    preserveOriginalMessage(), // Preserve the original message
     timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
     colorize({ all: true }),
     customFormat
