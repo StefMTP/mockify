@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
-import { CreateOrderInput, ProductSetInput } from "./shopify";
+import { CreateOrderInput, ProductSetInput } from "./shopify.js";
+import logger from "./logger.js";
 
 const generateRandomMPN = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("");
@@ -80,17 +81,32 @@ function generateProductOptions(): { name: string; values: { name: string }[] }[
 
   // Generate the product options in the required format
   const productOptions = selectedOptions
-    .filter(() => faker.datatype.boolean())
+    .filter(() => faker.datatype.boolean()) // Randomly include or exclude options
     .map((option) => {
       // Generate random number of values (between 2 and 5)
       const valuesCount = faker.number.int({ min: 2, max: 5 });
-      const values = Array.from(
-        { length: valuesCount },
-        () => ({ name: optionsGenerators[option]() }) // Generate value objects
-      );
+
+      // Generate unique values using a Set
+      const uniqueValuesSet = new Set<string>();
+      while (uniqueValuesSet.size < valuesCount) {
+        uniqueValuesSet.add(optionsGenerators[option]());
+      }
+
+      // Convert unique values into the required format
+      const values = Array.from(uniqueValuesSet).map((value) => ({ name: value }));
 
       return { name: option, values };
     });
+
+  // Return the fixed static array if productOptions is empty
+  if (productOptions.length === 0) {
+    return [
+      {
+        name: "Title",
+        values: [{ name: "Default Title" }],
+      },
+    ];
+  }
 
   return productOptions;
 }
@@ -154,17 +170,18 @@ const createLineItem = () => {
   };
 };
 
-export const generateProductData = (): ProductSetInput => {
+export const generateProductData = (status: "ACTIVE" | "ARCHIVED" | "DRAFT"): ProductSetInput => {
   const productOptions = generateProductOptions();
+  const variants = generateVariants(productOptions);
   return {
     title: faker.commerce.productName(),
     descriptionHtml: faker.commerce.productDescription(),
-    productOptions: productOptions,
     productType: faker.commerce.department(),
-    status: "ACTIVE",
     tags: createProductTags(faker.number.int({ min: 1, max: 5 })),
-    variants: generateVariants(productOptions),
     vendor: faker.company.name(),
+    status,
+    productOptions,
+    variants,
   };
 };
 
