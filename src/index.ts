@@ -25,8 +25,17 @@ program
   .command("generate:products")
   .description("Generate dummy products in your Shopify store")
   .option("-c, --count <count>", "Number of products to generate")
-  .option("-s, --status <status>", 'Status of the products ("ACTIVE", "DRAFT", "ARCHIVED")')
+  .option("-s, --status <status>", "Status of the products (ACTIVE, DRAFT, ARCHIVED)")
   .action(async (options) => {
+    const { count, status } = options;
+    if (count && !validateCount(parseInt(count, 10))) {
+      logger.error("❌ Please enter a valid positive number for the count.");
+      process.exit(1);
+    }
+    if (status && !validateStatus(status)) {
+      logger.error("❌ Please enter a valid status (ACTIVE, DRAFT, ARCHIVED).");
+      process.exit(1);
+    }
     await generateProducts({
       count: options.count ? parseInt(options.count, 10) : undefined,
       status: options.status,
