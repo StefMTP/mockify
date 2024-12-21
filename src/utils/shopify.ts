@@ -1,95 +1,15 @@
 import axios, { AxiosInstance } from "axios";
 import config from "./config.js";
 import logger from "./logger.js";
-
-interface CreateOrderResponse {
-  orderCreate: {
-    order: {
-      id: string;
-      name: string;
-    };
-    userErrors: {
-      field: string[];
-      message: string;
-    }[];
-  };
-}
-
-export interface CreateOrderInput {
-  email: string;
-  tags: string[];
-  shippingAddress: {
-    address1: string;
-    city: string;
-    countryCode: string;
-    firstName: string;
-    lastName: string;
-    phone: string;
-    zip: string;
-  };
-  fulfillment: {
-    locationId: string;
-  };
-  shippingLines: {
-    title: string;
-    priceSet: {
-      shopMoney: { amount: string; currencyCode: string };
-    };
-  }[];
-  lineItems: {
-    priceSet: {
-      shopMoney: { amount: string; currencyCode: string };
-    };
-    quantity: number;
-    requiresShipping: boolean;
-    sku: string;
-    title: string;
-  }[];
-  transactions: {
-    kind: string;
-    status: string;
-    amountSet: {
-      shopMoney: { amount: string; currencyCode: string };
-    };
-    gateway: string;
-  }[];
-}
-
-interface CreateOrderOptions {
-  inventoryBehaviour: string;
-  sendReceipt: boolean;
-}
-
-export interface ProductSetInput {
-  title: string;
-  descriptionHtml: string;
-  productOptions: { name: string; values: { name: string }[] }[];
-  productType: string;
-  status: "ACTIVE" | "ARCHIVED" | "DRAFT";
-  tags: string[];
-  variants: {
-    sku: string;
-    barcode: string;
-    price: string;
-    compareAtPrice: string | null;
-    inventoryPolicy: "CONTINUE" | "DENY";
-    optionValues: { name: string; optionName: string }[];
-  }[];
-  vendor: string;
-}
-
-interface ProductSetResponse {
-  productSet: {
-    product: {
-      id: string;
-      title: string;
-    };
-    userErrors: {
-      field: string[];
-      message: string;
-    }[];
-  };
-}
+import {
+  BulkOperationRunQueryResponse,
+  CreateOrderInput,
+  CreateOrderOptions,
+  CreateOrderResponse,
+  ProductSetInput,
+  ProductSetResponse,
+  WebhookCreateMutationResponse,
+} from "./types.js";
 
 export default class ShopifyClient {
   axiosClient: AxiosInstance;
@@ -133,6 +53,51 @@ export default class ShopifyClient {
       logger.error("❌ GraphQL Query failed.");
       throw error;
     }
+  }
+
+  async getLocations() {
+    const { data } = await this.graphQLQuery<{
+      data: { locations: { nodes: { id: string; name: string }[] } };
+    }>(
+      `#graphql
+      query GetLocations {
+        locations(first: 10) {
+          nodes {
+            id
+            name
+          }
+        }
+      }`
+    );
+
+    return data.locations.nodes;
+  }
+
+  async getTranslatableResources(resourceType: string) {
+    const { data } = await this.graphQLQuery<{
+      data: {
+        translatableResources: {
+          nodes: { translatableContent: { key: string; value: string }[] }[];
+        };
+      };
+    }>(
+      `#graphql
+      query GetTranslatableResources($resourceType: TranslatableResourceType!) {
+        translatableResources(first: 10, resourceType: $resourceType) {
+          nodes {
+            translatableContent {
+              key
+              value
+            }
+          }
+        }
+     }`,
+      { resourceType }
+    );
+
+    return data.translatableResources.nodes.flatMap((node) =>
+      node.translatableContent.filter((content) => content.key == "name" && content.value)
+    );
   }
 
   async createOrderMutation(order: CreateOrderInput, options: CreateOrderOptions) {
@@ -197,5 +162,132 @@ export default class ShopifyClient {
     }
 
     return data.productSet.product;
+  }
+
+  async getProductVariants(cursor: string) {
+    const { data, errors } = await this.graphQLQuery<
+      {
+        data: {
+          productVariants: {
+            nodes: { id: string }[];
+            pageInfo: { endCursor: string; hasNextPage: boolean };
+          };
+        };
+        errors?: unknown[];
+      },
+      { cursor: string }
+    >(
+      `#graphql
+      query GetProductVariants($cursor: String) {
+        productVariants(first: 250, after: $cursor) {
+            nodes {
+              id
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+        }
+      }`,
+      { cursor }
+    );
+
+    if (errors) {
+      throw new Error(JSON.stringify(errors, null, 2));
+    }
+
+    return data.productVariants;
+  }
+
+  async getAllProductVariants() {
+    let cursor = "";
+    let hasNextPage = true;
+    let allVariants: { id: string }[] = [];
+
+    do {
+      const { nodes, pageInfo } = await this.getProductVariants(cursor);
+      allVariants = allVariants.concat(nodes);
+      cursor = pageInfo.endCursor;
+      hasNextPage = pageInfo.hasNextPage;
+    } while (cursor && hasNextPage);
+
+    return allVariants;
+  }
+
+  async bulkOperationRunQuery(query: string) {
+    const { data, errors } = await this.graphQLQuery<
+      { data: BulkOperationRunQueryResponse; errors?: unknown[] },
+      { query: string }
+    >(
+      `#graphql
+      mutation RunBulkOperation($query: String!) {
+        bulkOperationRunQuery(
+          query: $query
+        ) {
+          bulkOperation {
+            id
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }`,
+      { query }
+    );
+
+    if (data.bulkOperationRunQuery.userErrors?.length) {
+      throw new Error(JSON.stringify(data.bulkOperationRunQuery.userErrors, null, 2));
+    }
+
+    if (errors) {
+      throw new Error(JSON.stringify(errors, null, 2));
+    }
+
+    return data.bulkOperationRunQuery.bulkOperation.id;
+  }
+
+  async bulkOperationProductsQuery() {
+    const query = `{
+      productVariants {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }`;
+
+    return await this.bulkOperationRunQuery(query);
+  }
+
+  async webhookCreateMutation(topic: string, callbackUrl: string) {
+    const { data, errors } = await this.graphQLQuery<
+      {
+        data: WebhookCreateMutationResponse;
+        errors?: unknown[];
+      },
+      { topic: string; webhookSubscription: { callbackUrl: string; format: string } }
+    >(
+      `#graphql
+      mutation createWebhook($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {
+        webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
+          webhookSubscription {
+            id
+            userErrors {
+              field
+              message
+            }
+          }
+        }
+      }`,
+      { topic, webhookSubscription: { callbackUrl, format: "JSON" } }
+    );
+
+    if (errors) {
+      throw new Error(JSON.stringify(errors, null, 2));
+    }
+
+    return data.webhookSubscriptionCreate.webhookSubscription.id;
   }
 }
