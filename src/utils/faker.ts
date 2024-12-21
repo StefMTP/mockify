@@ -1,6 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { CreateOrderInput, ProductSetInput } from "./shopify.js";
-import logger from "./logger.js";
+import { CreateOrderInput, ProductSetInput, productStatus } from "./types.js";
 
 const generateRandomMPN = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("");
@@ -170,7 +169,7 @@ const createLineItem = () => {
   };
 };
 
-export const generateProductData = (status: "ACTIVE" | "ARCHIVED" | "DRAFT"): ProductSetInput => {
+export const generateProductData = (status: keyof typeof productStatus): ProductSetInput => {
   const productOptions = generateProductOptions();
   const variants = generateVariants(productOptions);
   return {
