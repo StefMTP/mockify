@@ -2,7 +2,6 @@ import inquirer from "inquirer";
 import config from "../utils/config.js";
 import logger from "../utils/logger.js";
 
-// Define the type for answers explicitly
 interface ShopifyCredentials {
   shop: string;
   accessToken: string;
@@ -32,7 +31,6 @@ export async function setup(args: { shop?: string; accessToken?: string }) {
     const shop = args.shop || answers.shop;
     const accessToken = args.accessToken || answers.accessToken;
 
-    // Update the .env file dynamically with the provided values
     if (shop) config.updateEnv("SHOP", shop);
     if (accessToken) config.updateEnv("ACCESS_TOKEN", accessToken);
 
