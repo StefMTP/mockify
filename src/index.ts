@@ -4,12 +4,21 @@ import { Command } from "commander";
 import { setup } from "./commands/setup.js";
 import generateOrders from "./commands/generateOrders.js";
 import generateProducts from "./commands/generateProducts.js";
+import { productStatus, ShopifyWebhookTopics } from "./utils/types.js";
+import logger from "./utils/logger.js";
+import createWebhook from "./commands/createWebhook.js";
+
+const validateCount = (count: number) => Number.isInteger(count) && count > 0;
+
+const validateStatus = (status: string) =>
+  Object.values(productStatus).includes(status as productStatus);
 
 const program = new Command();
 
 program
   .name("mockify")
   .description("CLI tool for generating mock data on your Shopify store")
+  .usage("[command] [options]")
   .version("1.0.0");
 
 // Command to set up Shopify credentials
@@ -46,7 +55,32 @@ program
 program
   .command("generate:orders")
   .description("Generate dummy orders in your Shopify store")
-  .option("-n, --number <number>", "Number of orders to generate", "1")
-  .action((options) => generateOrders(Number(options.number)));
+  .option("-c, --count <count>", "Number of orders to generate")
+  .option("-v, --variants", "Use your store's product variants")
+  .action(async (options) => {
+    const { count, variants } = options;
+    if (count && !validateCount(parseInt(count, 10))) {
+      logger.error("❌ Please enter a valid positive number for the count.");
+      process.exit(1);
+    }
+    await generateOrders({
+      count: options.count ? parseInt(options.count, 10) : undefined,
+      variants,
+    });
+  });
+
+// Command to create webhook subscription
+program
+  .command("create:webhook")
+  .description("Create a webhook subscription for a certain topic")
+  .option("-t, --topic <topic>", "Webhook topic")
+  .action(async (options) => {
+    const { topic } = options;
+    if (topic && Object.values(ShopifyWebhookTopics).includes(topic)) {
+      logger.error("❌ Please provide a webhook topic.");
+      process.exit(1);
+    }
+    await createWebhook(topic);
+  });
 
 program.parse(process.argv);
