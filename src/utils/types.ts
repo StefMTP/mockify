@@ -38,8 +38,9 @@ export interface CreateOrderInput {
     };
     quantity: number;
     requiresShipping: boolean;
-    sku: string;
-    title: string;
+    sku?: string;
+    title?: string;
+    varinantId?: string;
   }[];
   transactions: {
     kind: string;

@@ -164,24 +164,26 @@ export default class ShopifyClient {
     return data.productSet.product;
   }
 
-  async getProductVariants(cursor: string) {
+  async getProductVariants(cursor: string | null) {
     const { data, errors } = await this.graphQLQuery<
       {
         data: {
           productVariants: {
-            nodes: { id: string }[];
+            nodes: { id: string; price: string; compareAtPrice: string | null }[];
             pageInfo: { endCursor: string; hasNextPage: boolean };
           };
         };
         errors?: unknown[];
       },
-      { cursor: string }
+      { cursor: string | null }
     >(
       `#graphql
       query GetProductVariants($cursor: String) {
         productVariants(first: 250, after: $cursor) {
             nodes {
               id
+              price
+              compareAtPrice
             }
             pageInfo {
               endCursor
@@ -200,16 +202,16 @@ export default class ShopifyClient {
   }
 
   async getAllProductVariants() {
-    let cursor = "";
+    let cursor = null;
     let hasNextPage = true;
-    let allVariants: { id: string }[] = [];
+    let allVariants: { id: string; price: string; compareAtPrice: string | null }[] = [];
 
-    do {
+    while (hasNextPage) {
       const { nodes, pageInfo } = await this.getProductVariants(cursor);
       allVariants = allVariants.concat(nodes);
       cursor = pageInfo.endCursor;
       hasNextPage = pageInfo.hasNextPage;
-    } while (cursor && hasNextPage);
+    }
 
     return allVariants;
   }
