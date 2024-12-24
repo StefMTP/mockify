@@ -56,8 +56,9 @@ export default class ShopifyClient {
   }
 
   async getLocations() {
-    const { data } = await this.graphQLQuery<{
+    const { data, errors } = await this.graphQLQuery<{
       data: { locations: { nodes: { id: string; name: string }[] } };
+      errors?: unknown[];
     }>(
       `#graphql
       query GetLocations {
@@ -70,16 +71,21 @@ export default class ShopifyClient {
       }`
     );
 
+    if (errors) {
+      throw new Error(JSON.stringify(errors, null, 2));
+    }
+
     return data.locations.nodes;
   }
 
   async getTranslatableResources(resourceType: string) {
-    const { data } = await this.graphQLQuery<{
+    const { data, errors } = await this.graphQLQuery<{
       data: {
         translatableResources: {
           nodes: { translatableContent: { key: string; value: string }[] }[];
         };
       };
+      errors?: unknown[];
     }>(
       `#graphql
       query GetTranslatableResources($resourceType: TranslatableResourceType!) {
@@ -94,6 +100,10 @@ export default class ShopifyClient {
      }`,
       { resourceType }
     );
+
+    if (errors) {
+      throw new Error(JSON.stringify(errors, null, 2));
+    }
 
     return data.translatableResources.nodes.flatMap((node) =>
       node.translatableContent.filter((content) => content.key == "name" && content.value)
