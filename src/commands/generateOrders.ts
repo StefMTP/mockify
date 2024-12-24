@@ -68,7 +68,10 @@ export default async function generateOrders(options: { count?: number; variants
     const orders: { Order: string; ID: string }[] = [];
     let remainingCount = count;
 
-    const intervalId = setInterval(() => {
+    const intervalId = setInterval(async () => {
+      const batchCount = Math.min(4, remainingCount);
+      remainingCount -= batchCount;
+
       if (remainingCount <= 0) {
         clearInterval(intervalId);
         logger.info("🎉 Order generation completed!");
@@ -76,12 +79,9 @@ export default async function generateOrders(options: { count?: number; variants
         return;
       }
 
-      const batchCount = Math.min(4, remainingCount);
-      remainingCount -= batchCount;
-
-      queue(() => {
-        for (let i = 0; i < batchCount; i++) {
-          try {
+      for (let i = 0; i < batchCount; i++) {
+        try {
+          await queue(() => {
             const orderData = generateOrderData(
               locations,
               shippingMethods,
@@ -96,12 +96,15 @@ export default async function generateOrders(options: { count?: number; variants
               .then((order) => {
                 orders.push({ Order: order.name, ID: order.id });
                 logger.info(`✅ Created order: ${order.name}`);
+              })
+              .catch((err) => {
+                logger.error(`❌ Error creating order: ${err}`);
               });
-          } catch (err) {
-            logger.error(`❌ Error creating order: ${err}`);
-          }
+          });
+        } catch (err) {
+          logger.error(`❌ Error creating order: ${err}`);
         }
-      });
+      }
     }, 60 * 1000);
   } catch (error) {
     if (error instanceof Error) {

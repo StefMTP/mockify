@@ -4,6 +4,7 @@ import { generateProductData } from "../utils/faker.js";
 import logger from "../utils/logger.js";
 import config from "../utils/config.js";
 import { productStatus } from "../utils/types.js";
+import throttledQueue from "throttled-queue";
 
 interface ProductGenerationOptions {
   count: number;
@@ -15,7 +16,8 @@ export default async function generateProducts(options: {
   status?: keyof typeof productStatus;
 }) {
   try {
-    // If arguments are passed, use them; otherwise, prompt the user
+    const queue = throttledQueue(2, 1000);
+
     const answers = await inquirer.prompt<ProductGenerationOptions>([
       {
         type: "input",
@@ -48,14 +50,22 @@ export default async function generateProducts(options: {
     );
 
     const shopify = new ShopifyClient();
-    const products = [];
+    const products: { Product: string; ID: string }[] = [];
 
     for (let i = 0; i < count; i++) {
       try {
-        const productData = generateProductData(status);
-        const product = await shopify.productSetMutation(productData, true);
-        products.push({ Product: product.title, ID: product.id });
-        logger.info(`✅ Created product: ${product.title}`);
+        await queue(() => {
+          const productData = generateProductData(status);
+          shopify
+            .productSetMutation(productData, true)
+            .then((product) => {
+              products.push({ Product: product.title, ID: product.id });
+              logger.info(`✅ Created product: ${product.title}`);
+            })
+            .catch((err) => {
+              logger.error(`❌ Error creating product: ${err}`);
+            });
+        });
       } catch (err) {
         logger.error(`❌ Error creating product: ${err}`);
       }
