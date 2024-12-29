@@ -224,7 +224,7 @@ export const generateOrderData = (
       });
   return {
     email: faker.internet.email(),
-    tags: [`anathesi:${location.name}`],
+    // tags: [`anathesi:${location.name}`],
     shippingAddress: {
       address1: faker.location.streetAddress(),
       city: faker.location.city(),
@@ -233,9 +233,6 @@ export const generateOrderData = (
       lastName: faker.person.lastName(),
       phone: faker.phone.number(),
       zip: faker.location.zipCode(),
-    },
-    fulfillment: {
-      locationId: location.id,
     },
     shippingLines: [
       {

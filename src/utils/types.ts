@@ -13,7 +13,6 @@ export interface CreateOrderResponse {
 
 export interface CreateOrderInput {
   email: string;
-  tags: string[];
   shippingAddress: {
     address1: string;
     city: string;
@@ -22,9 +21,6 @@ export interface CreateOrderInput {
     lastName: string;
     phone: string;
     zip: string;
-  };
-  fulfillment: {
-    locationId: string;
   };
   shippingLines: {
     title: string;
@@ -50,6 +46,10 @@ export interface CreateOrderInput {
     };
     gateway: string;
   }[];
+  tags?: string[];
+  fulfillment?: {
+    locationId: string;
+  };
 }
 
 export interface CreateOrderOptions {
