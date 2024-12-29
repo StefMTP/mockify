@@ -68,16 +68,9 @@ export default async function generateOrders(options: { count?: number; variants
     const orders: { Order: string; ID: string }[] = [];
     let remainingCount = count;
 
-    const intervalId = setInterval(async () => {
+    const generateBatch = async () => {
       const batchCount = Math.min(4, remainingCount);
       remainingCount -= batchCount;
-
-      if (remainingCount <= 0) {
-        clearInterval(intervalId);
-        logger.info("🎉 Order generation completed!");
-        if (orders.length) logger.info(orders);
-        return;
-      }
 
       for (let i = 0; i < batchCount; i++) {
         try {
@@ -105,7 +98,18 @@ export default async function generateOrders(options: { count?: number; variants
           logger.error(`❌ Error creating order: ${err}`);
         }
       }
-    }, 60 * 1000);
+
+      if (remainingCount <= 0) {
+        logger.info("🎉 Order generation completed!");
+        if (orders.length) logger.info(orders);
+        clearInterval(intervalId);
+      }
+    };
+
+    // Run the first batch immediately
+    await generateBatch();
+
+    const intervalId = setInterval(generateBatch, 60 * 1000);
   } catch (error) {
     if (error instanceof Error) {
       logger.error(`❌ Command failure: ${error.message}`);
