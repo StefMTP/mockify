@@ -47,7 +47,6 @@ export default async function generateOrders(options: { count?: number; variants
       price: string;
       compareAtPrice: string | null;
     }[] = [];
-    const locations = await shopify.getLocations();
     const paymentMethods = Array.from(
       new Set(
         (await shopify.getTranslatableResources("PAYMENT_GATEWAY")).map((method) => method.value)
@@ -75,12 +74,7 @@ export default async function generateOrders(options: { count?: number; variants
       for (let i = 0; i < batchCount; i++) {
         try {
           await queue(() => {
-            const orderData = generateOrderData(
-              locations,
-              shippingMethods,
-              paymentMethods,
-              productVariants
-            );
+            const orderData = generateOrderData(shippingMethods, paymentMethods, productVariants);
             shopify
               .createOrderMutation(orderData, {
                 inventoryBehaviour: "BYPASS",

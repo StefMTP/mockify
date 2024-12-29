@@ -205,15 +205,10 @@ export const generateProductData = (status: keyof typeof productStatus): Product
 };
 
 export const generateOrderData = (
-  locations: {
-    id: string;
-    name: string;
-  }[],
   shippingLines: string[],
   paymentMethods: string[],
   variants?: { id: string; price: string; compareAtPrice: string | null }[]
 ): CreateOrderInput => {
-  const location = locations[faker.number.int({ min: 0, max: 2 })];
   const shippingLine = shippingLines[faker.number.int({ min: 0, max: 4 })];
   const shippingLinePrice = faker.commerce.price({ min: 0, max: 12 });
   const paymentMethod = paymentMethods[faker.number.int({ min: 0, max: 4 })];
@@ -224,7 +219,6 @@ export const generateOrderData = (
       });
   return {
     email: faker.internet.email(),
-    // tags: [`anathesi:${location.name}`],
     shippingAddress: {
       address1: faker.location.streetAddress(),
       city: faker.location.city(),
