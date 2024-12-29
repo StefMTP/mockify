@@ -8,6 +8,7 @@ import {
   CreateOrderResponse,
   ProductSetInput,
   ProductSetResponse,
+  ProductVariant,
   WebhookCreateMutationResponse,
 } from "./types.js";
 
@@ -179,7 +180,7 @@ export default class ShopifyClient {
       {
         data: {
           productVariants: {
-            nodes: { id: string; price: string; compareAtPrice: string | null }[];
+            nodes: ProductVariant[];
             pageInfo: { endCursor: string; hasNextPage: boolean };
           };
         };
@@ -214,7 +215,7 @@ export default class ShopifyClient {
   async getAllProductVariants() {
     let cursor = null;
     let hasNextPage = true;
-    let allVariants: { id: string; price: string; compareAtPrice: string | null }[] = [];
+    let allVariants: ProductVariant[] = [];
 
     while (hasNextPage) {
       const { nodes, pageInfo } = await this.getProductVariants(cursor);

@@ -4,6 +4,7 @@ import ShopifyClient from "../utils/shopify.js";
 import { generateOrderData } from "../utils/faker.js";
 import logger from "../utils/logger.js";
 import config from "../utils/config.js";
+import { ProductVariant } from "../utils/types.js";
 
 interface OrderGenerationOptions {
   count: number;
@@ -42,11 +43,7 @@ export default async function generateOrders(options: { count?: number; variants
     logger.info(`🚀 Generating ${count} orders for shop: ${config.shop}...`);
 
     const shopify = new ShopifyClient();
-    let productVariants: {
-      id: string;
-      price: string;
-      compareAtPrice: string | null;
-    }[] = [];
+    let productVariants: ProductVariant[] = [];
     const paymentMethods = Array.from(
       new Set(
         (await shopify.getTranslatableResources("PAYMENT_GATEWAY")).map((method) => method.value)

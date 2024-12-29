@@ -88,6 +88,12 @@ export interface ProductSetResponse {
   };
 }
 
+export interface ProductVariant {
+  id: string;
+  price: string;
+  compareAtPrice: string | null;
+}
+
 export enum productStatus {
   ACTIVE = "ACTIVE",
   DRAFT = "DRAFT",

@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { CreateOrderInput, ProductSetInput, productStatus } from "./types.js";
+import { CreateOrderInput, ProductSetInput, productStatus, ProductVariant } from "./types.js";
 
 const generateRandomMPN = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("");
@@ -154,9 +154,7 @@ const generateVariants = (options: { name: string; values: { name: string }[] }[
   return combine(options, []);
 };
 
-const createLineItemsFromVariants = (
-  variants: { id: string; price: string; compareAtPrice: string | null }[]
-) => {
+const createLineItemsFromVariants = (variants: ProductVariant[]) => {
   const selectedVariants = faker.helpers.arrayElements(
     variants,
     faker.number.int({ min: 1, max: 5 })
@@ -207,7 +205,7 @@ export const generateProductData = (status: keyof typeof productStatus): Product
 export const generateOrderData = (
   shippingLines: string[],
   paymentMethods: string[],
-  variants?: { id: string; price: string; compareAtPrice: string | null }[]
+  variants?: ProductVariant[]
 ): CreateOrderInput => {
   const shippingLine = shippingLines[faker.number.int({ min: 0, max: 4 })];
   const shippingLinePrice = faker.commerce.price({ min: 0, max: 12 });
