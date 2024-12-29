@@ -4,9 +4,9 @@ import { Command } from "commander";
 import { setup } from "./commands/setup.js";
 import generateOrders from "./commands/generateOrders.js";
 import generateProducts from "./commands/generateProducts.js";
+import createWebhook from "./commands/createWebhook.js";
 import { productStatus, ShopifyWebhookTopics } from "./utils/types.js";
 import logger from "./utils/logger.js";
-import createWebhook from "./commands/createWebhook.js";
 
 const validateCount = (count: number) => Number.isInteger(count) && count > 0;
 

@@ -1,10 +1,10 @@
 import inquirer from "inquirer";
+import throttledQueue from "throttled-queue";
 import ShopifyClient from "../utils/shopify.js";
 import { generateProductData } from "../utils/faker.js";
 import logger from "../utils/logger.js";
 import config from "../utils/config.js";
 import { productStatus } from "../utils/types.js";
-import throttledQueue from "throttled-queue";
 
 interface ProductGenerationOptions {
   count: number;

@@ -1,9 +1,9 @@
-import ShopifyClient from "../utils/shopify.js";
+import throttledQueue from "throttled-queue";
 import inquirer from "inquirer";
+import ShopifyClient from "../utils/shopify.js";
 import { generateOrderData } from "../utils/faker.js";
 import logger from "../utils/logger.js";
 import config from "../utils/config.js";
-import throttledQueue from "throttled-queue";
 
 interface OrderGenerationOptions {
   count: number;
