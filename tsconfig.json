@@ -10,8 +10,9 @@
     "skipLibCheck": true, // Skip type checking of declaration files
     "resolveJsonModule": true, // Allow importing of JSON files
     "moduleResolution": "Node", // Resolve modules like Node.js
-    "allowSyntheticDefaultImports": true // Allow default imports even if not explicitly supported by the module
+    "allowSyntheticDefaultImports": true, // Allow default imports even if not explicitly supported by the module
+    "types": ["node"]
   },
-  "include": ["src/**/*"], // Include all .ts files in the src directory
+  "include": ["src/**/*.ts"], // Include all .ts files in the src directory
   "exclude": ["node_modules", "dist"] // Exclude node_modules and compiled output
 }

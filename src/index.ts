@@ -5,13 +5,14 @@ import { setup } from "./commands/setup.js";
 import generateOrders from "./commands/generateOrders.js";
 import generateProducts from "./commands/generateProducts.js";
 import createWebhook from "./commands/createWebhook.js";
-import { productStatus, ShopifyWebhookTopics } from "./utils/types.js";
+import { ProductStatus, WebhookSubscriptionTopic } from "./types/admin.types.js";
 import logger from "./utils/logger.js";
 
 const validateCount = (count: number) => Number.isInteger(count) && count > 0;
 
-const validateStatus = (status: string) =>
-  Object.values(productStatus).includes(status as productStatus);
+function validateStatus(status: string): status is ProductStatus {
+  return (Object.values(ProductStatus) as string[]).includes(status);
+}
 
 const program = new Command();
 
@@ -76,7 +77,7 @@ program
   .option("-t, --topic <topic>", "Webhook topic")
   .action(async (options) => {
     const { topic } = options;
-    if (topic && Object.values(ShopifyWebhookTopics).includes(topic)) {
+    if (topic && Object.values(WebhookSubscriptionTopic).includes(topic)) {
       logger.error("❌ Please provide a webhook topic.");
       process.exit(1);
     }

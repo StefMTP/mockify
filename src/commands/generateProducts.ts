@@ -4,16 +4,16 @@ import ShopifyClient from "../utils/shopify.js";
 import { generateProductData } from "../utils/faker.js";
 import logger from "../utils/logger.js";
 import config from "../utils/config.js";
-import { productStatus } from "../utils/types.js";
+import { ProductStatus } from "../types/admin.types.js";
 
 interface ProductGenerationOptions {
   count: number;
-  status: keyof typeof productStatus;
+  status: ProductStatus;
 }
 
 export default async function generateProducts(options: {
   count?: number;
-  status?: keyof typeof productStatus;
+  status?: ProductStatus;
 }) {
   try {
     const queue = throttledQueue(2, 1000);
@@ -36,7 +36,7 @@ export default async function generateProducts(options: {
         type: "list",
         name: "status",
         message: "What status should the products have?",
-        choices: Object.values(productStatus),
+        choices: Object.values(ProductStatus),
         default: "DRAFT",
         when: !options?.status, // Skip prompt if status is provided as an argument
       },

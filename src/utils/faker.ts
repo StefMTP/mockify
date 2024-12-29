@@ -1,5 +1,18 @@
 import { faker } from "@faker-js/faker";
-import { CreateOrderInput, ProductSetInput, productStatus, ProductVariant } from "./types.js";
+import {
+  CountryCode,
+  CurrencyCode,
+  Maybe,
+  OrderCreateLineItemInput,
+  OrderCreateOrderInput,
+  OrderTransactionKind,
+  OrderTransactionStatus,
+  ProductSetInput,
+  ProductStatus,
+  ProductVariant,
+  ProductVariantInventoryPolicy,
+  ProductVariantSetInput,
+} from "../types/admin.types.js";
 
 const generateRandomMPN = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("");
@@ -110,7 +123,9 @@ function generateProductOptions(): { name: string; values: { name: string }[] }[
   return productOptions;
 }
 
-const generateVariants = (options: { name: string; values: { name: string }[] }[]) => {
+const generateVariants = (
+  options: { name: string; values: { name: string }[] }[]
+): ProductVariantSetInput[] => {
   // Helper to recursively generate combinations
   const combine = (
     remainingOptions: { name: string; values: { name: string }[] }[],
@@ -121,7 +136,7 @@ const generateVariants = (options: { name: string; values: { name: string }[] }[
     barcode: string;
     price: string;
     compareAtPrice: string | null;
-    inventoryPolicy: "CONTINUE" | "DENY";
+    inventoryPolicy: ProductVariantInventoryPolicy;
   }[] => {
     if (remainingOptions.length === 0) {
       const prices = generatePrices();
@@ -133,7 +148,7 @@ const generateVariants = (options: { name: string; values: { name: string }[] }[
           barcode: generateRandomBarcode(),
           price: prices.finalPrice,
           compareAtPrice: prices.startingPrice,
-          inventoryPolicy: "DENY",
+          inventoryPolicy: ProductVariantInventoryPolicy.Deny,
           optionValues: currentCombination,
         },
       ];
@@ -154,7 +169,9 @@ const generateVariants = (options: { name: string; values: { name: string }[] }[
   return combine(options, []);
 };
 
-const createLineItemsFromVariants = (variants: ProductVariant[]) => {
+const createLineItemsFromVariants = (
+  variants: Pick<ProductVariant, "id" | "price" | "compareAtPrice">[]
+): OrderCreateLineItemInput[] => {
   const selectedVariants = faker.helpers.arrayElements(
     variants,
     faker.number.int({ min: 1, max: 5 })
@@ -164,7 +181,7 @@ const createLineItemsFromVariants = (variants: ProductVariant[]) => {
     priceSet: {
       shopMoney: {
         amount: variant.price,
-        currencyCode: "EUR",
+        currencyCode: CurrencyCode.Eur,
       },
     },
     quantity: faker.number.int({ min: 1, max: 3 }),
@@ -172,12 +189,12 @@ const createLineItemsFromVariants = (variants: ProductVariant[]) => {
   }));
 };
 
-const createLineItem = () => {
+const createLineItem = (): OrderCreateLineItemInput => {
   return {
     priceSet: {
       shopMoney: {
         amount: faker.commerce.price({ min: 20, max: 1500 }),
-        currencyCode: "EUR",
+        currencyCode: CurrencyCode.Eur,
       },
     },
     quantity: faker.number.int({ min: 1, max: 3 }),
@@ -187,7 +204,7 @@ const createLineItem = () => {
   };
 };
 
-export const generateProductData = (status: keyof typeof productStatus): ProductSetInput => {
+export const generateProductData = (status: ProductStatus): ProductSetInput => {
   const productOptions = generateProductOptions();
   const variants = generateVariants(productOptions);
   return {
@@ -203,10 +220,10 @@ export const generateProductData = (status: keyof typeof productStatus): Product
 };
 
 export const generateOrderData = (
-  shippingLines: string[],
-  paymentMethods: string[],
-  variants?: ProductVariant[]
-): CreateOrderInput => {
+  shippingLines: (Maybe<string> | undefined)[],
+  paymentMethods: (Maybe<string> | undefined)[],
+  variants?: Pick<ProductVariant, "id" | "price" | "compareAtPrice">[]
+): OrderCreateOrderInput => {
   const shippingLine = shippingLines[faker.number.int({ min: 0, max: 4 })];
   const shippingLinePrice = faker.commerce.price({ min: 0, max: 12 });
   const paymentMethod = paymentMethods[faker.number.int({ min: 0, max: 4 })];
@@ -220,7 +237,7 @@ export const generateOrderData = (
     shippingAddress: {
       address1: faker.location.streetAddress(),
       city: faker.location.city(),
-      countryCode: faker.location.countryCode(),
+      countryCode: faker.location.countryCode() as CountryCode,
       firstName: faker.person.firstName(),
       lastName: faker.person.lastName(),
       phone: faker.phone.number(),
@@ -228,26 +245,26 @@ export const generateOrderData = (
     },
     shippingLines: [
       {
-        title: shippingLine,
+        title: shippingLine as string,
         priceSet: {
-          shopMoney: { amount: shippingLinePrice, currencyCode: "EUR" },
+          shopMoney: { amount: shippingLinePrice, currencyCode: CurrencyCode.Eur },
         },
       },
     ],
     lineItems,
     transactions: [
       {
-        kind: "SALE",
-        status: faker.helpers.arrayElement(["SUCCESS", "PENDING"]),
+        kind: OrderTransactionKind.Sale,
+        status: faker.helpers.arrayElement(Object.values(OrderTransactionStatus)),
         amountSet: {
           shopMoney: {
             amount: (
               lineItems.reduce(
-                (sum, item) => sum + +item.priceSet.shopMoney.amount * item.quantity,
+                (sum, item) => sum + +item.priceSet!.shopMoney.amount * item.quantity,
                 0
               ) + +shippingLinePrice
             ).toFixed(2),
-            currencyCode: "EUR",
+            currencyCode: CurrencyCode.Eur,
           },
         },
         gateway: paymentMethod,

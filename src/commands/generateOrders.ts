@@ -4,7 +4,11 @@ import ShopifyClient from "../utils/shopify.js";
 import { generateOrderData } from "../utils/faker.js";
 import logger from "../utils/logger.js";
 import config from "../utils/config.js";
-import { ProductVariant } from "../utils/types.js";
+import {
+  OrderCreateInputsInventoryBehavior,
+  ProductVariant,
+  TranslatableResourceType,
+} from "../types/admin.types.js";
 
 interface OrderGenerationOptions {
   count: number;
@@ -43,17 +47,19 @@ export default async function generateOrders(options: { count?: number; variants
     logger.info(`🚀 Generating ${count} orders for shop: ${config.shop}...`);
 
     const shopify = new ShopifyClient();
-    let productVariants: ProductVariant[] = [];
+    let productVariants: Pick<ProductVariant, "id" | "price" | "compareAtPrice">[] = [];
     const paymentMethods = Array.from(
       new Set(
-        (await shopify.getTranslatableResources("PAYMENT_GATEWAY")).map((method) => method.value)
+        (await shopify.getTranslatableResources(TranslatableResourceType.PaymentGateway)).map(
+          (method) => method.value
+        )
       )
     );
     const shippingMethods = Array.from(
       new Set(
-        (await shopify.getTranslatableResources("DELIVERY_METHOD_DEFINITION")).map(
-          (method) => method.value
-        )
+        (await shopify.getTranslatableResources(TranslatableResourceType.DeliveryMethodDefinition))
+          .filter(Boolean)
+          .map((method) => method.value)
       )
     );
 
@@ -74,7 +80,7 @@ export default async function generateOrders(options: { count?: number; variants
             const orderData = generateOrderData(shippingMethods, paymentMethods, productVariants);
             shopify
               .createOrderMutation(orderData, {
-                inventoryBehaviour: "BYPASS",
+                inventoryBehaviour: OrderCreateInputsInventoryBehavior.Bypass,
                 sendReceipt: false,
               })
               .then((order) => {
