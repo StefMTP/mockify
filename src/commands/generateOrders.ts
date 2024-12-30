@@ -83,9 +83,11 @@ export default async function generateOrders(options: { count?: number; variants
                 inventoryBehaviour: OrderCreateInputsInventoryBehavior.Bypass,
                 sendReceipt: false,
               })
-              .then((order) => {
+              .then(({ order, extensions }) => {
                 orders.push({ Order: order.name, ID: order.id });
-                logger.info(`✅ Created order: ${order.name}`);
+                logger.info(
+                  `✅ Created order: ${order.name} [${extensions?.cost.throttleStatus.currentlyAvailable} points remaining]`
+                );
               })
               .catch((err) => {
                 logger.error(`❌ Error creating order: ${err}`);

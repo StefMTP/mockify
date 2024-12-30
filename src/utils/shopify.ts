@@ -66,7 +66,7 @@ export default class ShopifyClient {
   }
 
   async createOrderMutation(order: OrderCreateOrderInput, options: OrderCreateOptionsInput) {
-    const { data, errors } = await this.client.request(
+    const { data, errors, extensions } = await this.client.request(
       `#graphql
       mutation CreateOrder($order: OrderCreateOrderInput!, $options: OrderCreateOptionsInput) {
         orderCreate(order: $order, options: $options) {
@@ -93,11 +93,11 @@ export default class ShopifyClient {
       throw new Error(JSON.stringify(data.orderCreate.userErrors, null, 2));
     }
 
-    return data.orderCreate.order!;
+    return { order: data.orderCreate.order!, extensions };
   }
 
   async productSetMutation(productSet: ProductSetInput, synchronous: boolean) {
-    const { data, errors } = await this.client.request(
+    const { data, errors, extensions } = await this.client.request(
       `#graphql
       mutation createProduct($productSet: ProductSetInput!, $synchronous: Boolean!) {
         productSet(synchronous: $synchronous, input: $productSet) {
@@ -124,7 +124,7 @@ export default class ShopifyClient {
       throw new Error(JSON.stringify(data.productSet.userErrors, null, 2));
     }
 
-    return data.productSet.product!;
+    return { product: data.productSet.product!, extensions };
   }
 
   async getProductVariants(cursor: Maybe<string> | undefined) {

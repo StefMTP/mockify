@@ -58,9 +58,11 @@ export default async function generateProducts(options: {
           const productData = generateProductData(status);
           shopify
             .productSetMutation(productData, true)
-            .then((product) => {
+            .then(({ product, extensions }) => {
               products.push({ Product: product.title, ID: product.id });
-              logger.info(`✅ Created product: ${product.title}`);
+              logger.info(
+                `✅ Created product: ${product.title} [Available points: ${extensions?.cost.throttleStatus.currentlyAvailable}]`
+              );
             })
             .catch((err) => {
               logger.error(`❌ Error creating product: ${err}`);
