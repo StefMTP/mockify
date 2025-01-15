@@ -2,6 +2,7 @@
 
 import { Command } from "commander";
 import { setup } from "./commands/setup.js";
+import fetchProducts from "./commands/fetchProducts.js";
 import generateOrders from "./commands/generateOrders.js";
 import generateProducts from "./commands/generateProducts.js";
 import createWebhook from "./commands/createWebhook.js";
@@ -83,5 +84,11 @@ program
     }
     await createWebhook(topic);
   });
+
+// Command to fetch all products
+program
+  .command("fetch:products")
+  .description("Fetch all products from your Shopify store")
+  .action(fetchProducts);
 
 program.parse(process.argv);
