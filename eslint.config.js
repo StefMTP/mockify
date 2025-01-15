@@ -25,8 +25,8 @@ export default [
 
       // General rules
       "no-console": "off", // Allow console logs (for CLI apps)
-      semi: ["error", "always"], // Enforce semicolons
-      quotes: ["error", "double"], // Enforce double quotes
+      semi: ["error", "always"], // Enforce semicolons,
+      quotes: ["error", "double", { avoidEscape: true }], // Enforce double quotes, allow single quotes to avoid escaping
     },
   },
 ];
