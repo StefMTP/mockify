@@ -38,12 +38,28 @@ export type GetProductVariantsQueryVariables = AdminTypes.Exact<{
 
 export type GetProductVariantsQuery = { productVariants: { nodes: Array<Pick<AdminTypes.ProductVariant, 'id' | 'price' | 'compareAtPrice'>>, pageInfo: Pick<AdminTypes.PageInfo, 'endCursor' | 'hasNextPage'> } };
 
+export type GetProductsQueryVariables = AdminTypes.Exact<{
+  cursor?: AdminTypes.InputMaybe<AdminTypes.Scalars['String']['input']>;
+}>;
+
+
+export type GetProductsQuery = { products: { nodes: Array<(
+      Pick<AdminTypes.Product, 'id' | 'title' | 'productType' | 'vendor' | 'description' | 'tags' | 'handle'>
+      & { featuredMedia?: AdminTypes.Maybe<{ image?: AdminTypes.Maybe<Pick<AdminTypes.Image, 'url' | 'id'>> }>, options: Array<Pick<AdminTypes.ProductOption, 'name' | 'values'>>, variants: { nodes: Array<(
+          Pick<AdminTypes.ProductVariant, 'id' | 'price' | 'compareAtPrice' | 'sku' | 'barcode' | 'inventoryQuantity' | 'inventoryPolicy'>
+          & { image?: AdminTypes.Maybe<Pick<AdminTypes.Image, 'id' | 'url'>>, selectedOptions: Array<Pick<AdminTypes.SelectedOption, 'name' | 'value'>>, inventoryItem: (
+            Pick<AdminTypes.InventoryItem, 'tracked'>
+            & { measurement: { weight?: AdminTypes.Maybe<Pick<AdminTypes.Weight, 'unit' | 'value'>> } }
+          ) }
+        )> } }
+    )>, pageInfo: Pick<AdminTypes.PageInfo, 'hasNextPage' | 'endCursor' | 'hasPreviousPage' | 'startCursor'> } };
+
 export type RunBulkOperationMutationVariables = AdminTypes.Exact<{
   query: AdminTypes.Scalars['String']['input'];
 }>;
 
 
-export type RunBulkOperationMutation = { bulkOperationRunQuery?: AdminTypes.Maybe<{ bulkOperation?: AdminTypes.Maybe<Pick<AdminTypes.BulkOperation, 'id'>>, userErrors: Array<Pick<AdminTypes.UserError, 'field' | 'message'>> }> };
+export type RunBulkOperationMutation = { bulkOperationRunQuery?: AdminTypes.Maybe<{ bulkOperation?: AdminTypes.Maybe<Pick<AdminTypes.BulkOperation, 'id'>>, userErrors: Array<Pick<AdminTypes.BulkOperationUserError, 'field' | 'message'>> }> };
 
 export type CreateWebhookMutationVariables = AdminTypes.Exact<{
   topic: AdminTypes.WebhookSubscriptionTopic;
@@ -57,6 +73,7 @@ interface GeneratedQueryTypes {
   "#graphql\n      query GetLocations {\n        locations(first: 10) {\n          nodes {\n            id\n            name\n          }\n        }\n      }": {return: GetLocationsQuery, variables: GetLocationsQueryVariables},
   "#graphql\n      query GetTranslatableResources($resourceType: TranslatableResourceType!) {\n        translatableResources(first: 10, resourceType: $resourceType) {\n          nodes {\n            translatableContent {\n              key\n              value\n            }\n          }\n        }\n     }": {return: GetTranslatableResourcesQuery, variables: GetTranslatableResourcesQueryVariables},
   "#graphql\n      query GetProductVariants($cursor: String) {\n        productVariants(first: 250, after: $cursor) {\n            nodes {\n              id\n              price\n              compareAtPrice\n            }\n            pageInfo {\n              endCursor\n              hasNextPage\n            }\n        }\n      }": {return: GetProductVariantsQuery, variables: GetProductVariantsQueryVariables},
+  "#graphql\n        query GetProducts($cursor: String) {\n        products(first: 250, after: $cursor) {\n          nodes {\n            id\n            title\n            featuredMedia {\n              ... on MediaImage {\n               image {\n                url\n                id\n               }\n              }\n            }\n            productType\n            vendor\n            description\n            tags\n            handle\n            options {\n              name\n              values\n            }\n            variants (first: 100) {\n                nodes {\n                    id\n                    price\n                    compareAtPrice\n                    sku\n                    barcode\n                    image {\n                        id\n                        url\n                    }\n                    selectedOptions {\n                        name\n                        value\n                    }\n                    inventoryQuantity\n                    inventoryPolicy\n                    inventoryItem {\n                        measurement {\n                            weight {\n                                unit\n                                value\n                            }\n                        }\n                        tracked\n                    }\n                }\n            }\n          }\n          pageInfo {\n            hasNextPage\n            endCursor\n            hasPreviousPage\n            startCursor\n          }\n    }\n}\n      ": {return: GetProductsQuery, variables: GetProductsQueryVariables},
 }
 
 interface GeneratedMutationTypes {

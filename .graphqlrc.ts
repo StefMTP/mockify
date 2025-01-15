@@ -7,7 +7,7 @@ function getConfig() {
     projects: {
       default: shopifyApiProject({
         apiType: ApiType.Admin,
-        apiVersion: "2024-10",
+        apiVersion: "2025-01",
         documents: ["./src/**/*.{js,ts}"],
         outputDir: "./src/types",
       }),
