@@ -1,5 +1,5 @@
 import throttledQueue from "throttled-queue";
-import inquirer from "inquirer";
+import { input, confirm } from "@inquirer/prompts";
 import ShopifyClient from "../utils/shopify.js";
 import { generateOrderData } from "../utils/faker.js";
 import logger from "../utils/logger.js";
@@ -9,40 +9,20 @@ import {
   ProductVariant,
   TranslatableResourceType,
 } from "../types/admin.types.js";
+import { validateCount } from "../utils/helpers.js";
 
-interface OrderGenerationOptions {
-  count: number;
-  variants: boolean;
-}
-
-export default async function generateOrders(options: { count?: number; variants?: boolean }) {
+export default async function generateOrders(args: { count?: number; variants?: boolean }) {
   try {
-    const queue = throttledQueue(2, 1000);
-
-    const answers = await inquirer.prompt<OrderGenerationOptions>([
-      {
-        type: "input",
-        name: "count",
+    const count =
+      args.count ||
+      +(await input({
         message: "How many orders would you like to generate?",
-        validate: (input: string) => {
-          const num = parseInt(input, 10);
-          if (isNaN(num) || num <= 0) {
-            return "Please enter a valid positive number.";
-          }
-          return true;
-        },
-        when: !options?.count,
-      },
-      {
-        type: "confirm",
-        name: "variants",
-        message: "Do you want to use your store's product variants?",
-        when: !options?.variants,
-      },
-    ]);
-
-    const count = options.count || answers.count;
-    const useVariants = options.variants || answers.variants;
+        validate: (input: string) =>
+          validateCount(parseInt(input, 10)) || "Please enter a valid positive number.",
+      }));
+    const useVariants =
+      args.variants ||
+      (await confirm({ message: "Do you want to use your store's product variants?" }));
 
     logger.info(`🚀 Generating ${count} orders for shop: ${config.shop}...`);
 
@@ -69,6 +49,7 @@ export default async function generateOrders(options: { count?: number; variants
 
     const orders: { Order: string; ID: string }[] = [];
     let remainingCount = count;
+    const queue = throttledQueue(2, 1000);
 
     const generateBatch = async () => {
       const batchCount = Math.min(4, remainingCount);
