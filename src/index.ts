@@ -7,13 +7,8 @@ import generateOrders from "./commands/generateOrders.js";
 import generateProducts from "./commands/generateProducts.js";
 import createWebhook from "./commands/createWebhook.js";
 import { ProductStatus, WebhookSubscriptionTopic } from "./types/admin.types.js";
+import { validateCount } from "./utils/helpers.js";
 import logger from "./utils/logger.js";
-
-const validateCount = (count: number) => Number.isInteger(count) && count > 0;
-
-function validateStatus(status: string): status is ProductStatus {
-  return (Object.values(ProductStatus) as string[]).includes(status);
-}
 
 const program = new Command();
 
@@ -43,7 +38,7 @@ program
       logger.error("❌ Please enter a valid positive number for the count.");
       process.exit(1);
     }
-    if (status && !validateStatus(status)) {
+    if (status && !(Object.values(ProductStatus) as string[]).includes(status)) {
       logger.error("❌ Please enter a valid status (ACTIVE, DRAFT, ARCHIVED).");
       process.exit(1);
     }
