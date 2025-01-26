@@ -1,5 +1,5 @@
 import { input, select } from "@inquirer/prompts";
-import throttledQueue from "throttled-queue";
+import PQueue from "p-queue";
 import ShopifyClient from "../utils/shopify.js";
 import { generateProductData } from "../utils/faker.js";
 import logger from "../utils/logger.js";
@@ -29,29 +29,35 @@ export default async function generateProducts(args: { count?: number; status?: 
     );
 
     const shopify = new ShopifyClient();
+    logger.info("Created Shopify client");
+
     const products: { Product: string; ID: string }[] = [];
-    const queue = throttledQueue(2, 1000);
+
+    // Create a PQueue instance with concurrency = 1 and delay of 2 seconds
+    const queue = new PQueue({
+      concurrency: 1,
+      interval: 2000, // Time in ms between tasks
+      intervalCap: 1, // Limit tasks per interval
+    });
 
     for (let i = 0; i < count; i++) {
-      try {
-        await queue(() => {
+      queue.add(async () => {
+        try {
+          logger.info(`Creating product ${i + 1}/${count}...`);
           const productData = generateProductData(status);
-          shopify
-            .productSetMutation(productData, true)
-            .then(({ product, extensions }) => {
-              products.push({ Product: product.title, ID: product.id });
-              logger.info(
-                `✅ Created product: ${product.title} [Available points: ${extensions?.cost.throttleStatus.currentlyAvailable}]`
-              );
-            })
-            .catch((err) => {
-              logger.error(`❌ Error creating product: ${err}`);
-            });
-        });
-      } catch (err) {
-        logger.error(`❌ Error creating product: ${err}`);
-      }
+          const { product, extensions } = await shopify.productSetMutation(productData, true);
+          products.push({ Product: product.title, ID: product.id });
+          logger.info(
+            `✅ Created product: ${product.title} [Available points: ${extensions?.cost.throttleStatus.currentlyAvailable}]`
+          );
+        } catch (err) {
+          logger.error(`❌ Error creating product ${i + 1}: ${err}`);
+        }
+      });
     }
+
+    // Wait for the queue to finish processing
+    await queue.onIdle();
 
     if (products.length) logger.info(products);
   } catch (error) {

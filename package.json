@@ -23,7 +23,7 @@
     "axios": "^1.7.9",
     "commander": "^12.1.0",
     "dotenv": "^16.4.7",
-    "throttled-queue": "^2.1.4",
+    "p-queue": "^8.1.0",
     "winston": "^3.17.0"
   },
   "devDependencies": {
