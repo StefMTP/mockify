@@ -13,6 +13,7 @@ import {
   ProductVariantInventoryPolicy,
   ProductVariantSetInput,
 } from "../types/admin.types.js";
+import logger from "./logger.js";
 
 const generateRandomMPN = () => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("");
@@ -81,36 +82,46 @@ function generatePrices() {
 }
 
 function generateProductOptions(): { name: string; values: { name: string }[] }[] {
-  // Define available options and their respective value generators
   const optionsGenerators: Record<"size" | "color" | "material", () => string> = {
-    size: () => faker.helpers.arrayElement(["Small", "Medium", "Large", "Extra Large"]),
+    size: () =>
+      faker.helpers.arrayElement([
+        "Extra Small",
+        "Small",
+        "Medium",
+        "Large",
+        "Extra Large",
+        "2 Extra Large",
+      ]),
     color: () => faker.color.human(),
     material: () => faker.commerce.productMaterial(),
   };
 
-  // Randomly decide which options to include
   const selectedOptions = Object.keys(optionsGenerators) as (keyof typeof optionsGenerators)[];
 
-  // Generate the product options in the required format
   const productOptions = selectedOptions
-    .filter(() => faker.datatype.boolean()) // Randomly include or exclude options
+    .filter(() => faker.datatype.boolean())
     .map((option) => {
-      // Generate random number of values (between 2 and 5)
       const valuesCount = faker.number.int({ min: 2, max: 5 });
-
-      // Generate unique values using a Set
       const uniqueValuesSet = new Set<string>();
-      while (uniqueValuesSet.size < valuesCount) {
+      let attempts = 0; // Add an attempt counter
+      const maxAttempts = 50; // Limit the number of attempts
+
+      while (uniqueValuesSet.size < valuesCount && attempts < maxAttempts) {
         uniqueValuesSet.add(optionsGenerators[option]());
+        attempts++;
       }
 
-      // Convert unique values into the required format
-      const values = Array.from(uniqueValuesSet).map((value) => ({ name: value }));
+      // If unable to generate enough unique values, warn the user
+      if (uniqueValuesSet.size < valuesCount) {
+        logger.warn(
+          `⚠️ Warning: Could only generate ${uniqueValuesSet.size} unique values for option "${option}" (requested ${valuesCount}).`
+        );
+      }
 
+      const values = Array.from(uniqueValuesSet).map((value) => ({ name: value }));
       return { name: option, values };
     });
 
-  // Return the fixed static array if productOptions is empty
   if (productOptions.length === 0) {
     return [
       {
@@ -237,7 +248,7 @@ export const generateOrderData = (
     shippingAddress: {
       address1: faker.location.streetAddress(),
       city: faker.location.city(),
-      countryCode: faker.location.countryCode() as CountryCode,
+      countryCode: faker.helpers.arrayElement(Object.values(CountryCode)),
       firstName: faker.person.firstName(),
       lastName: faker.person.lastName(),
       phone: faker.phone.number(),
