@@ -319,7 +319,6 @@ export default class ShopifyClient {
       cursor = pageInfo.endCursor;
       hasNextPage = pageInfo.hasNextPage;
       // Rate limit logic
-      console.log(extensions);
       const throttleStatus = extensions!.cost.throttleStatus;
       const currentlyAvailable = throttleStatus.currentlyAvailable;
       const restoreRate = throttleStatus.restoreRate;
