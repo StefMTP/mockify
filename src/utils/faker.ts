@@ -266,7 +266,12 @@ export const generateOrderData = (
     transactions: [
       {
         kind: OrderTransactionKind.Sale,
-        status: faker.helpers.arrayElement(Object.values(OrderTransactionStatus)),
+        status: faker.helpers.arrayElement(
+          Object.values(OrderTransactionStatus).filter(
+            (status) =>
+              status === OrderTransactionStatus.Pending || status === OrderTransactionStatus.Success
+          )
+        ),
         amountSet: {
           shopMoney: {
             amount: (
