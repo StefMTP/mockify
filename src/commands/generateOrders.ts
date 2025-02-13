@@ -25,7 +25,9 @@ export default async function generateOrders(args: { count?: number; variants?: 
       (await confirm({ message: "Do you want to use your store's product variants?" }));
 
     logger.info(
-      `🚀 Generating ${count} orders for shop: ${config.shop}, using ${useVariants ? "the store's variants" : "randomly generated variants"}...`
+      `🚀 Generating ${count} orders for shop: ${config.shop}, using ${
+        useVariants ? "the store's variants" : "randomly generated variants"
+      }...`
     );
 
     const shopify = new ShopifyClient();
@@ -51,6 +53,7 @@ export default async function generateOrders(args: { count?: number; variants?: 
 
     const orders: { Order: string; ID: string }[] = [];
     let remainingCount = count;
+    let intervalId: NodeJS.Timeout | undefined; // Initialize intervalId
     const queue = new PQueue({
       concurrency: 1,
       interval: 2000, // Time in ms between tasks
@@ -81,16 +84,19 @@ export default async function generateOrders(args: { count?: number; variants?: 
       }
 
       if (remainingCount <= 0) {
+        await queue.onIdle();
         logger.info("🎉 Order generation completed!");
         if (orders.length) logger.info(orders);
-        clearInterval(intervalId);
+        if (intervalId) clearInterval(intervalId);
       }
     };
 
     // Run the first batch immediately
     await generateBatch();
 
-    const intervalId = setInterval(generateBatch, 60 * 1000);
+    if (remainingCount > 0) {
+      intervalId = setInterval(generateBatch, 60 * 1000);
+    }
   } catch (error) {
     if (error instanceof Error) {
       logger.error(`❌ Command failure: ${error.message}`);
