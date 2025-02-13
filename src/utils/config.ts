@@ -13,6 +13,7 @@ class Config {
 
   constructor() {
     this.envPath = path.resolve(process.cwd(), ".env");
+    if (process.argv.includes("setup")) return; // Skip checks during setup
     this.checkEnvFile(); // Ensure .env exists
     this.warnMissingEnvVars(); // Warn about missing variables
   }
@@ -31,6 +32,7 @@ class Config {
     if (!fs.existsSync(this.envPath)) {
       logger.warn("⚠️  .env file not found. Creating an empty .env file...");
       fs.writeFileSync(this.envPath, ""); // Create an empty .env file
+      process.exit(1); // Exit the process to allow the user to populate the file
     }
   }
 
@@ -40,6 +42,7 @@ class Config {
     if (missingVars.length > 0) {
       logger.warn(`⚠️  Missing required environment variables: ${missingVars.join(", ")}`);
       logger.warn("⚠️  Please run mockify setup.");
+      process.exit(1); // Exit the process to allow the user to set up the variables
     }
   }
 
