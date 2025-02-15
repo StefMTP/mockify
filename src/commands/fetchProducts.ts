@@ -16,15 +16,17 @@ function getSavePath(): string {
 
 export default async function fetchProducts() {
   try {
-    logger.info("🚀 Fetching all products from your Shopify store...");
-    const shopify = new ShopifyClient();
-    const products = await shopify.getAllProducts();
-    const savePath = getSavePath();
     const format = await select<"JSON" | "CSV">({
       message: "Do you want to save the products as JSON or CSV?",
       choices: ["JSON", "CSV"],
       default: "JSON",
     });
+    logger.info(
+      "🚀 Fetching all products from your Shopify store. Please wait, as this may take some time..."
+    );
+    const shopify = new ShopifyClient();
+    const products = await shopify.getAllProducts();
+    const savePath = getSavePath();
     if (format === "CSV") {
       const csv = parse(products);
       fs.writeFileSync(path.join(savePath, "products.csv"), csv);
