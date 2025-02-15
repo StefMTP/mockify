@@ -1,6 +1,8 @@
 import { AdminApiClient, createAdminApiClient } from "@shopify/admin-api-client";
 import config from "./config.js";
 import {
+  BasicEvent,
+  CommentEvent,
   Image,
   InventoryItem,
   Maybe,
@@ -406,5 +408,97 @@ export default class ShopifyClient {
     }
 
     return data.webhookSubscriptionCreate.webhookSubscription!;
+  }
+
+  async getStoreEvents(cursor: Maybe<string> | undefined) {
+    const { data, errors, extensions } = await this.client.request(
+      `#graphql
+        query GetEvents($cursor: String) {
+        events(first: 250, after: $cursor, reverse: true) {
+          nodes {
+            id
+            action
+            message
+            attributeToApp
+            attributeToUser
+            createdAt
+            criticalAlert
+            ... on BasicEvent {
+              secondaryMessage
+              additionalData
+              additionalContent
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+            hasPreviousPage
+            startCursor
+          }
+        }
+      }
+      `,
+      { variables: { cursor } }
+    );
+
+    if (errors) {
+      throw new Error(JSON.stringify(errors, null, 2));
+    }
+
+    return { events: data!.events!, extensions };
+  }
+
+  async getAllStoreEvents() {
+    let cursor: Maybe<string> | undefined = null;
+    let hasNextPage = true;
+    let allEvents: Array<
+      | Pick<
+          BasicEvent,
+          | "secondaryMessage"
+          | "subjectType"
+          | "additionalData"
+          | "additionalContent"
+          | "id"
+          | "action"
+          | "message"
+          | "attributeToApp"
+          | "attributeToUser"
+          | "createdAt"
+          | "criticalAlert"
+        >
+      | Pick<
+          CommentEvent,
+          | "id"
+          | "action"
+          | "message"
+          | "attributeToApp"
+          | "attributeToUser"
+          | "createdAt"
+          | "criticalAlert"
+        >
+    > = [];
+
+    while (hasNextPage) {
+      const {
+        events: { nodes, pageInfo },
+        extensions,
+      } = await this.getStoreEvents(cursor);
+
+      allEvents = allEvents.concat(nodes);
+      cursor = pageInfo.endCursor;
+      hasNextPage = pageInfo.hasNextPage;
+      // Rate limit logic
+      const throttleStatus = extensions!.cost.throttleStatus;
+      const currentlyAvailable = throttleStatus.currentlyAvailable;
+      const restoreRate = throttleStatus.restoreRate;
+
+      // If the available capacity is low, wait for it to restore
+      if (currentlyAvailable < 20) {
+        const waitTime = Math.ceil((20 - currentlyAvailable) / restoreRate) * 1000; // Calculate wait time in milliseconds
+        console.info(`Rate limit reached, waiting for ${waitTime / 1000} seconds`);
+        await new Promise((resolve) => setTimeout(resolve, waitTime)); // Wait for the calculated time
+      }
+    }
+    return allEvents;
   }
 }

@@ -9,6 +9,7 @@ import createWebhook from "./commands/createWebhook.js";
 import { ProductStatus, WebhookSubscriptionTopic } from "./types/admin.types.js";
 import { validateCount } from "./utils/helpers.js";
 import logger from "./utils/logger.js";
+import fetchStoreEvents from "./commands/fetchStoreEvents.js";
 
 const program = new Command();
 
@@ -85,5 +86,11 @@ program
   .command("fetch:products")
   .description("Fetch all products from your Shopify store")
   .action(fetchProducts);
+
+// Command to fetch all store events
+program
+  .command("fetch:store-events")
+  .description("Fetch all store events from your Shopify store")
+  .action(fetchStoreEvents);
 
 program.parse(process.argv);
