@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import logger from "./logger.js";
 
+// TODO make sure to always check the file path and the process environment of the actual project directory, because mockify is a CLI tool that can be run from any directory
+
 dotenv.config(); // Load .env variables on startup
 
 // Define the required environment variables
